@@ -4,28 +4,20 @@ from typing import Iterable
 # Идея простая, расширять особо нечего :D
 
 
-def get_enter_timestamps(timestamps: list[int]) -> list[int]:
-    return [timestamps[i] for i in range(0, len(timestamps), 2)]
-
-
-def get_leave_timestamps(timestamps: list[int]) -> list[int]:
-    return [timestamps[i + 1] for i in range(0, len(timestamps), 2)]
-
-
 class LessonSession:
     STATUS_ENTER = "enter"
     STATUS_LEAVE = "leave"
 
     @staticmethod
     def extract_timeline(data: dict[str, list[int]]):
-        timeline = []
-        members = data.keys()
-        for member in members:
-            timeline.extend((t, (member, LessonSession.STATUS_ENTER)) for t in get_enter_timestamps(data[member]))
-            timeline.extend((t, (member, LessonSession.STATUS_LEAVE)) for t in get_leave_timestamps(data[member]))
-
-        timeline.sort(key=lambda x: x[0])
-        return timeline
+        timeline = [
+            (time, (member, LessonSession.STATUS_ENTER if i % 2 == 0 else LessonSession.STATUS_LEAVE))
+            for member, times in data.items()
+            for i, time in enumerate(times)
+        ]
+        if len(timeline) % 2 != 0:
+            raise ValueError("Invalid timeline")
+        return sorted(timeline, key=lambda x: x[0])
 
     def __init__(self, members: Iterable[str]):
         self.statuses = {member: 0 for member in members}
@@ -56,10 +48,18 @@ def appearance(data: dict[str, list[int]]) -> int:
     session = LessonSession(members)
 
     for timestamp, action in timeline:
-        member, act = action.split()
+        member, act = action
         if act == LessonSession.STATUS_ENTER:
             session.enter(member, timestamp)
         else:
             session.leave(member, timestamp)
 
     return session.counter
+
+data = {
+    'lesson': [1594663200, 1594666800],
+    'pupil': [1594663340, 1594663389, 1594663390, 1594663395, 1594663396, 1594666472],
+    'tutor': [1594663290, 1594663430, 1594663443, 1594666473]
+}
+
+print(appearance(data))
