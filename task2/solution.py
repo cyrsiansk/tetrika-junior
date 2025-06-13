@@ -88,19 +88,24 @@ def get_abctype_all(url_type: str, char: str, parse_args: ABCTypeParseArgs) -> A
     url = url_type.format(char)
     result = get_abctype_linktext(url, parse_args)
     collected = False
+    break_next = False
 
     while True:
         for entry in result.entries:
             if entry.startswith(char):
                 entries.append(entry)
+                break_next = False
+                collected = False
             else:
                 collected = True
-                break
         if collected:
-            break
+            break_next = True
         if not result.next_page_url:
             break
         result = get_abctype_linktext(result.next_page_url, parse_args)
+
+        if break_next:
+            break
 
     return ABCTypePage(entries, None)
 
@@ -134,3 +139,15 @@ def collect_file(url_type: str, alphabet: str, parse_args: ABCTypeParseArgs,
     result = collect_entries(url_type, alphabet, parse_args, max_workers)
     counted_dict = get_counted_dict(result)
     return create_file(path, counted_dict)
+
+
+def main():
+    url = "https://ru.wikipedia.org/w/index.php?title=Категория:Животные_по_алфавиту&from={}"
+    title = "Страницы в категории «Животные по алфавиту»"
+    alphabet = "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯ"
+    parse_args = ABCTypeParseArgs(title=title, next_page_text="Следующая страница")
+    collect_file(url, alphabet, parse_args, path="beasts.csv", max_workers=20)
+
+
+if __name__ == "__main__":
+    main()
