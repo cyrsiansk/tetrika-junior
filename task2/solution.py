@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
@@ -5,7 +6,6 @@ from dataclasses import dataclass
 from typing import List, Optional
 import contextvars
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 
 # Сделал функцию переиспользуемой - её можно сразу применять
 # к другим страниц подобного типа (которые построены по алфвавитному шаблону википедии)
@@ -146,7 +146,14 @@ def main():
     title = "Страницы в категории «Животные по алфавиту»"
     alphabet = "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯ"
     parse_args = ABCTypeParseArgs(title=title, next_page_text="Следующая страница")
-    collect_file(url, alphabet, parse_args, path="beasts.csv", max_workers=20)
+
+    requests_kwargs = {}
+    if len(sys.argv) > 1:
+        proxy = sys.argv[1]
+        requests_kwargs["proxies"] = {"http": proxy, "https": proxy}
+
+    with Kwargs(**requests_kwargs):
+        collect_file(url, alphabet, parse_args, path="beasts.csv", max_workers=20)
 
 
 if __name__ == "__main__":
